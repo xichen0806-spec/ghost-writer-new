@@ -1,0 +1,7 @@
+{
+  "name": "Letter Ghostwriter",
+  "description": "A calm, caring AI Ghostwriter helping you craft a sincere apology and gratitude letter to your dad.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
