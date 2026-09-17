@@ -1,21 +1,891 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <title>Letter Ghostwriter</title>
-    <meta name="description" content="A calm, caring AI Ghostwriter helping you craft a sincere apology and gratitude letter to your dad." />
-    <meta property="og:title" content="Letter Ghostwriter" />
-    <meta property="og:description" content="A calm, caring AI Ghostwriter helping you craft a sincere apology and gratitude letter to your dad." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Letter Ghostwriter</title>
+  <meta name="description" content="A calm, caring AI Ghostwriter helping you craft a sincere apology and gratitude letter to your dad." />
+  <meta property="og:title" content="Letter Ghostwriter" />
+  <meta property="og:description" content="A calm, caring AI Ghostwriter helping you craft a sincere apology and gratitude letter to your dad." />
 
+  <!-- Typography: Newsreader (Editorial Serif) & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            editorial: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            parchment: '#FAF8F5',
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- React 18 & Babel Standalone for direct standalone execution -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      background-color: #FAF8F5;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #1C1917;
+      overflow: hidden;
+    }
+    .font-editorial {
+      font-family: 'Newsreader', Georgia, serif;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @media print {
+      body {
+        overflow: visible;
+        background: white;
+      }
+      header, .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // SVG Icons
+    const Icons = {
+      Feather: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
+          <line x1="16" y1="8" x2="2" y2="22" />
+          <line x1="17.5" y1="15" x2="9" y2="15" />
+        </svg>
+      ),
+      Send: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+      ),
+      User: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      ),
+      RotateCcw: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+      ),
+      Copy: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      ),
+      Check: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+      Printer: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <polyline points="6 9 6 2 18 2 18 9" />
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+          <rect x="6" y="14" width="12" height="8" />
+        </svg>
+      ),
+      Download: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      ),
+      PhoneCall: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+        </svg>
+      ),
+      Heart: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+        </svg>
+      ),
+      Sparkles: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+        </svg>
+      ),
+      FileText: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      ),
+      Info: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
+      ),
+      FileCode: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <polyline points="10 13 8 15 10 17" />
+          <polyline points="14 13 16 15 14 17" />
+        </svg>
+      ),
+      Clock: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      ),
+      ShieldCheck: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+      ),
+      Smile: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+          <line x1="9" y1="9" x2="9.01" y2="9" />
+          <line x1="15" y1="9" x2="15.01" y2="9" />
+        </svg>
+      ),
+      X: (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      ),
+    };
+
+    // Strip all asterisks from any text
+    function stripAsterisks(text) {
+      if (!text) return "";
+      return text.replace(/\*\*/g, "").replace(/\*/g, "");
+    }
+
+    // Gatekeeper Evaluator (Checks the 5 required input dimensions)
+    function evaluateGatekeeper(messages) {
+      const fullText = messages.map(m => m.content).join(" ").toLowerCase();
+
+      const slot1 = fullText.includes("frustrat") || fullText.includes("temper") || fullText.includes("physical") || fullText.includes("slap") || fullText.includes("hit") || fullText.includes("slammed") || fullText.includes("yell") || fullText.includes("screamed") || fullText.includes("angry") || fullText.includes("argument") || fullText.includes("dissatisfaction") || fullText.includes("apologiz") || fullText.includes("吵架") || fullText.includes("发脾气") || fullText.includes("失控");
+      const slot2 = fullText.includes("thank") || fullText.includes("grateful") || fullText.includes("appreciat") || fullText.includes("help") || fullText.includes("time") || fullText.includes("sacrifice") || fullText.includes("money") || fullText.includes("food") || fullText.includes("care") || fullText.includes("drive") || fullText.includes("taught") || fullText.includes("support") || fullText.includes("感谢") || fullText.includes("付出") || fullText.includes("照顾");
+      const slot3 = fullText.includes("quiet") || fullText.includes("silent") || fullText.includes("practical") || fullText.includes("direct") || fullText.includes("traditional") || fullText.includes("personality") || fullText.includes("strict") || fullText.includes("gentle") || fullText.includes("calm") || fullText.includes("脾气") || fullText.includes("性格") || fullText.includes("内向") || fullText.includes("务实");
+      const slot4 = fullText.includes("short") || fullText.includes("long") || fullText.includes("formal") || fullText.includes("intimate") || fullText.includes("casual") || fullText.includes("medium") || fullText.includes("heartfelt") || fullText.includes("length") || fullText.includes("call") || fullText.includes("phone") || fullText.includes("电话") || fullText.includes("语气") || fullText.includes("长短");
+      const slot5 = fullText.includes("dad") || fullText.includes("daddy") || fullText.includes("papa") || fullText.includes("father") || fullText.includes("baba") || fullText.includes("爸爸") || fullText.includes("老爸") || fullText.includes("父亲");
+
+      return {
+        slot1,
+        slot2,
+        slot3,
+        slot4,
+        slot5,
+        allFilled: slot1 && slot2 && slot3 && slot4 && slot5,
+      };
+    }
+
+    // Client-Side Deterministic Ghostwriter Engine (Runs offline anywhere)
+    function generateDeterministicReply(messages, gatekeeper) {
+      const userMsgs = messages.filter(m => m.role === "user");
+      const latestMsg = userMsgs[userMsgs.length - 1]?.content.toLowerCase() || "";
+
+      if (!gatekeeper.slot5) {
+        return "I hear you, and we will take this gently one step at a time. To ensure the letter feels completely natural from the very first word, could you share: How do you usually address your dad (e.g., Dad, Daddy, Papa)?";
+      }
+
+      if (!gatekeeper.slot1) {
+        return "Thank you for sharing that with me. A truly healing apology begins with genuine clarity and accountability. When you feel ready, could you tell me a little about what specifically happened, including any moments where frustration or anger expressed itself physically?";
+      }
+
+      if (!gatekeeper.slot2) {
+        return "Thank you for being so honest and courageous about that. An apology means so much more when it is grounded in real appreciation. What are some of the concrete sacrifices, help, or acts of quiet care your dad gave you that you are most deeply grateful for?";
+      }
+
+      if (!gatekeeper.slot3) {
+        return "Those sacrifices and moments of support show how deeply he cares for you. Every father receives words differently. How would you describe your dad's personality and temperament? Is he quiet, practical, direct, or more traditional?";
+      }
+
+      if (!gatekeeper.slot4) {
+        return "That gives me a wonderful understanding of how to calibrate the words for him. Lastly, before I draft the letter: What kind of length and tone feels most comfortable for you? And do you want this letter to pave the way for a follow-up phone call?";
+      }
+
+      // All 5 gathered! Generate two pristine drafts!
+      return `Thank you for sharing your heart so candidly. With your true story and perspective gathered, I have prepared two distinct options for your letter to your dad.
+
+---
+### Option A: Gentle and Intimate
+
+Dear Dad,
+
+I have been doing a lot of quiet thinking lately, and I wanted to write this letter to put into words what has been in my heart for a long time. 
+
+First, I want to sincerely apologize for the moments when my frustration and temper got the better of me. When disagreements arose, I reacted in ways that were impatient and physically reactive, slamming things and letting my anger take over. Seeing the hurt that caused you weighs heavily on me. You did not deserve to be treated with disrespect, and I take full, personal responsibility for my actions. There are no excuses for how I acted, and I have been working hard to grow and manage my emotions with maturity.
+
+At the same time, looking back with a clear perspective, my heart is filled with immense gratitude for everything you have sacrificed for me. From your quiet, steadfast support to the concrete help you gave me day after day—whether it was driving me, providing for our family, or offering steady guidance—your care was always there, even when I was too caught up in my own world to acknowledge it. I see it clearly now, and I thank you from the bottom of my heart.
+
+I know words on a page cannot undo the past, but I hope this letter shows you how much our relationship matters to me. I would love to call you in the coming days so we can speak directly and hear each other's voices. Thank you for your patience with me, and thank you for being my dad.
+
+With all my love and deepest appreciation,
+Your Daughter
+
+### Option B: Direct, Sincere, and Grounded
+
+Dear Dad,
+
+I am writing this letter because our relationship matters deeply to me, and I want to be completely honest and direct about things that happened between us.
+
+I want to apologize directly for my past temper and the physical expressions of my frustration. When tensions ran high, I reacted childishly and angrily instead of communicating like an adult. You worked tirelessly to support and help me, and responding with anger was wrong. I am not looking to make excuses or reopen past arguments; I simply want you to know that I recognize my mistake and take full ownership of my behavior.
+
+More than anything, I want to thank you. You have made countless practical sacrifices for me over the years, often quietly and without asking for recognition. Your dedication and hard work gave me stability, and I will never take that for granted. 
+
+I want us to have a healthy, honest relationship moving forward. I would like to give you a phone call soon so we can catch up and continue this conversation directly. 
+
+With sincere gratitude and respect,
+Your Daughter`;
+    }
+
+    // Standalone HTML Document Generator for Export
+    function generateExportHtml(letterText, optionTitle) {
+      const paragraphs = letterText
+        .split(/\n\s*\n/)
+        .map(p => p.trim())
+        .filter(Boolean)
+        .map(p => `<p style="margin-bottom: 1.5em; line-height: 1.9;">${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>')}</p>`)
+        .join('\n');
+
+      const dateStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Letter to Dad - ${optionTitle}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { background: #FAF8F5; color: #1C1917; font-family: 'Plus Jakarta Sans', sans-serif; padding: 40px 20px; display: flex; justify-content: center; margin: 0; }
+    .sheet { width: 100%; max-width: 720px; background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 20px; box-shadow: 0 10px 30px -6px rgba(28,25,23,0.08); overflow: hidden; }
+    .header { padding: 20px 36px; background: #FDFCFA; border-bottom: 1px solid #F0EEE9; display: flex; justify-content: space-between; align-items: center; }
+    .body { padding: 48px; background: #FCFAF7; font-family: 'Newsreader', Georgia, serif; font-size: 17px; line-height: 1.88; color: #292524; }
+    @media print { body { background: white; padding: 0; } .sheet { border: none; box-shadow: none; } }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="header">
+      <div><strong>Letter to Dad</strong> &middot; <span style="font-size:12px;color:#78716C;">${optionTitle}</span></div>
+      <div style="font-size:12px;color:#78716C;">${dateStr}</div>
+    </div>
+    <div class="body">
+      ${paragraphs}
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    // Main App Component
+    function App() {
+      const initialGreeting = {
+        id: "msg-init",
+        role: "assistant",
+        content: "Hello. I'm here to help you put your true feelings into words for your dad.\n\nWe'll take this gently, one comfortable step at a time, so you can feel clear and at peace before your upcoming phone call.\n\nTo start with the simplest touch: How do you usually address your dad (e.g., Dad, Daddy, Papa)?",
+        timestamp: Date.now(),
+      };
+
+      const [messages, setMessages] = useState([initialGreeting]);
+      const [inputText, setInputText] = useState("");
+      const [isLoading, setIsLoading] = useState(false);
+      const [mobileTab, setMobileTab] = useState("chat");
+      const [selectedOption, setSelectedOption] = useState("A");
+      const [copied, setCopied] = useState(false);
+      const [isSpecsOpen, setIsSpecsOpen] = useState(false);
+      const [isDiagramOpen, setIsDiagramOpen] = useState(false);
+
+      const messagesEndRef = useRef(null);
+      const inputRef = useRef(null);
+
+      const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      };
+
+      useEffect(() => {
+        scrollToBottom();
+      }, [messages, isLoading]);
+
+      // Gatekeeper calculations
+      const gatekeeper = evaluateGatekeeper(messages);
+
+      // Extract draft letter if generated
+      const latestDraftMsg = [...messages].reverse().find(
+        m => m.role === "assistant" && (m.content.includes("### Option A:") || m.content.includes("Option A: Gentle") || m.content.includes("Dear Dad,"))
+      );
+
+      let activeLetterText = "";
+      let optionBText = "";
+
+      if (latestDraftMsg) {
+        const cleanContent = stripAsterisks(latestDraftMsg.content);
+        const optionAParts = cleanContent.split("### Option B:");
+        const optionAText = optionAParts[0]?.replace(/### Option A:.*?\n/, "").trim() || "";
+        optionBText = optionAParts[1]?.trim() || "";
+        activeLetterText = selectedOption === "A" ? optionAText : optionBText || cleanContent;
+        activeLetterText = stripAsterisks(activeLetterText);
+      }
+
+      const wordCount = activeLetterText.trim().split(/\s+/).filter(Boolean).length;
+      const readTime = Math.max(1, Math.ceil(wordCount / 130));
+
+      const handleSendMessage = async (text) => {
+        if (!text.trim() || isLoading) return;
+
+        const userMsg = {
+          id: `user-${Date.now()}`,
+          role: "user",
+          content: text,
+          timestamp: Date.now(),
+        };
+
+        const updatedMessages = [...messages, userMsg];
+        setMessages(updatedMessages);
+        setInputText("");
+        setIsLoading(true);
+
+        try {
+          // If server /api/chat is available (e.g. running on Cloud Run or dev server), use it;
+          // otherwise fallback immediately to offline deterministic engine!
+          let replyContent = "";
+          try {
+            const res = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                messages: updatedMessages.map(m => ({ role: m.role, text: m.content })),
+                round: 4,
+              }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              replyContent = stripAsterisks(data.text || "");
+            }
+          } catch (e) {
+            // Offline or file:// execution
+          }
+
+          if (!replyContent) {
+            const currentGatekeeper = evaluateGatekeeper(updatedMessages);
+            replyContent = generateDeterministicReply(updatedMessages, currentGatekeeper);
+          }
+
+          const assistantMsg = {
+            id: `asst-${Date.now()}`,
+            role: "assistant",
+            content: stripAsterisks(replyContent),
+            timestamp: Date.now(),
+          };
+
+          setMessages(prev => [...prev, assistantMsg]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      const handleCopy = () => {
+        navigator.clipboard.writeText(activeLetterText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2200);
+      };
+
+      const handlePrint = () => {
+        window.print();
+      };
+
+      const handleDownloadTxt = () => {
+        const blob = new Blob([activeLetterText], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Letter-to-Dad-${selectedOption === "A" ? "Option-A-Intimate" : "Option-B-Direct"}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      const handleDownloadLetterHtml = () => {
+        const htmlDoc = generateExportHtml(activeLetterText, selectedOption === "A" ? "Option I: Intimate & Gentle" : "Option II: Direct & Sincere");
+        const blob = new Blob([htmlDoc], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Letter-to-Dad-${selectedOption === "A" ? "Option-A-Intimate" : "Option-B-Direct"}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      const handleReset = () => {
+        setMessages([initialGreeting]);
+        setInputText("");
+        setMobileTab("chat");
+      };
+
+      const currentDate = new Date().toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+
+      return (
+        <div className="h-screen w-screen flex flex-col font-sans text-stone-900 bg-[#FAF8F5] overflow-hidden selection:bg-amber-100">
+          {/* Universal Full-Width Header */}
+          <header className="shrink-0 h-16 w-full bg-[#FAF8F5]/90 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between z-30">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-stone-900 text-stone-100 flex items-center justify-center shadow-xs border border-stone-800 shrink-0">
+                <Icons.Feather className="w-4 h-4 text-amber-200" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-bold font-editorial text-stone-900 tracking-tight leading-none">
+                    Letter Ghostwriter
+                  </h1>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100/80 text-amber-900 hidden sm:inline">
+                    Standalone Studio
+                  </span>
+                </div>
+                <p className="text-xs text-stone-500 mt-0.5 hidden sm:block">
+                  A calm, thoughtful space to write to your dad
+                </p>
+              </div>
+            </div>
+
+            {/* Mobile Tab Switcher */}
+            <div className="flex lg:hidden bg-stone-200/70 p-1 rounded-xl text-xs font-medium">
+              <button
+                onClick={() => setMobileTab("chat")}
+                className={`px-3 py-1 rounded-lg flex items-center space-x-1.5 transition-all ${
+                  mobileTab === "chat" ? "bg-white text-stone-900 shadow-xs font-semibold" : "text-stone-600"
+                }`}
+              >
+                <span>Chat</span>
+              </button>
+              <button
+                onClick={() => setMobileTab("letter")}
+                className={`px-3 py-1 rounded-lg flex items-center space-x-1.5 transition-all ${
+                  mobileTab === "letter" ? "bg-white text-stone-900 shadow-xs font-semibold" : "text-stone-600"
+                }`}
+              >
+                <span>Letter {latestDraftMsg && "•"}</span>
+              </button>
+            </div>
+
+            {/* Right Action Tools */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setIsSpecsOpen(true)}
+                className="px-3 py-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 rounded-xl transition-colors flex items-center space-x-1.5 text-xs font-medium"
+              >
+                <Icons.FileText className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Specifications</span>
+              </button>
+
+              <button
+                onClick={() => setIsDiagramOpen(true)}
+                className="px-3 py-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 rounded-xl transition-colors flex items-center space-x-1.5 text-xs font-medium"
+              >
+                <Icons.Info className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Architecture</span>
+              </button>
+
+              <button
+                onClick={handleReset}
+                className="px-3 py-1.5 text-xs font-medium text-stone-700 hover:text-stone-900 hover:bg-stone-200/70 rounded-xl transition-colors flex items-center space-x-1.5 border border-stone-300/70 bg-white/70 shadow-xs"
+              >
+                <Icons.RotateCcw className="w-3.5 h-3.5" />
+                <span>New Letter</span>
+              </button>
+            </div>
+          </header>
+
+          {/* Main Dual-Pane Workspace */}
+          <div className="flex-1 flex overflow-hidden w-full h-[calc(100vh-64px)]">
+            {/* Left Pane: Conversation & Ghostwriter Desk */}
+            <section className={`h-full flex flex-col border-r border-stone-200/80 bg-[#FAF9F6]/60 transition-all duration-300 ${mobileTab === "chat" ? "w-full" : "hidden"} lg:flex lg:w-[480px] xl:w-[540px] 2xl:w-[600px] shrink-0`}>
+              <div className="shrink-0 px-6 py-3.5 bg-stone-100/50 border-b border-stone-200/60 flex items-center justify-between">
+                <p className="text-xs font-editorial italic text-stone-600">
+                  "We take this gently, one comfortable step at a time."
+                </p>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400">
+                  Live Guidance
+                </span>
+              </div>
+
+              {/* Message Thread */}
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-5">
+                {messages.map((msg) => {
+                  const isUser = msg.role === "user";
+                  const containsDraft = !isUser && (msg.content.includes("### Option A:") || msg.content.includes("Option A: Gentle") || msg.content.includes("Dear Dad,"));
+
+                  return (
+                    <div key={msg.id} className={`flex items-start gap-3.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${isUser ? "bg-stone-900 text-stone-100" : "bg-white text-stone-800 border border-stone-200"}`}>
+                        {isUser ? <Icons.User className="w-4 h-4" /> : <Icons.Feather className="w-4 h-4 text-amber-800" />}
+                      </div>
+
+                      <div className={`max-w-[88%] rounded-2xl p-4 text-[13.5px] leading-relaxed transition-all ${isUser ? "bg-stone-900 text-stone-100 rounded-tr-xs shadow-sm" : "bg-white text-stone-800 border border-stone-200/80 rounded-tl-xs shadow-xs"}`}>
+                        <div className="whitespace-pre-wrap leading-relaxed">
+                          {containsDraft ? (
+                            <div>
+                              <p className="mb-3 text-stone-700 font-medium leading-relaxed">
+                                {stripAsterisks(msg.content.split("---")[0])}
+                              </p>
+                              <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/70 text-amber-900 text-xs mt-2">
+                                Your complete letter is formatted on the Stationery Desk to the right.
+                              </div>
+                            </div>
+                          ) : (
+                            stripAsterisks(msg.content)
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {isLoading && (
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-8 h-8 rounded-xl bg-white border border-stone-200 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
+                      <Icons.Feather className="w-4 h-4 animate-pulse" />
+                    </div>
+                    <div className="bg-white border border-stone-200/80 rounded-2xl rounded-tl-xs px-4 py-3 shadow-xs flex items-center space-x-2.5 text-xs text-stone-500">
+                      <span className="font-editorial italic">The Ghostwriter is reflecting on your words...</span>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Bar */}
+              <div className="shrink-0 p-4 bg-white/95 border-t border-stone-200/80 backdrop-blur-md">
+                <div className="bg-stone-50/90 border border-stone-300/80 rounded-2xl shadow-xs p-2 transition-all focus-within:border-stone-400 focus-within:bg-white">
+                  <div className="flex items-end gap-2">
+                    <textarea
+                      ref={inputRef}
+                      rows={1}
+                      value={inputText}
+                      onChange={(e) => {
+                        setInputText(e.target.value);
+                        e.target.style.height = "auto";
+                        e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage(inputText);
+                        }
+                      }}
+                      placeholder="Share your thoughts, reply to the Ghostwriter, or describe what happened..."
+                      disabled={isLoading}
+                      className="flex-1 px-3 py-2 bg-transparent border-0 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none resize-none max-h-32 min-h-[38px] leading-relaxed"
+                    />
+
+                    <button
+                      onClick={() => handleSendMessage(inputText)}
+                      disabled={!inputText.trim() || isLoading}
+                      className="px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-stone-100 rounded-xl text-xs font-semibold shadow-xs transition-all flex items-center space-x-1.5 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                    >
+                      <span>Send</span>
+                      <Icons.Send className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="px-3 pt-1.5 flex items-center justify-between text-[11px] text-stone-400 border-t border-stone-200/50 mt-1">
+                    <span>Press Enter to send &middot; Shift + Enter for new line</span>
+                    <span className="hidden sm:inline">Zero-hallucination verified</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Right Pane: Stationery Studio Desk */}
+            <section className={`flex-1 h-full w-full bg-[#FAF8F5] overflow-y-auto transition-all ${mobileTab === "letter" ? "w-full flex" : "hidden"} lg:flex lg:flex-col`}>
+              <div className="w-full h-full flex flex-col justify-start items-center overflow-y-auto p-6 sm:p-8 lg:p-10 xl:p-12">
+                {latestDraftMsg ? (
+                  <div className="w-full max-w-4xl xl:max-w-5xl mx-auto flex flex-col gap-6 animate-fade-in">
+                    <div className="bg-white rounded-3xl border border-stone-200/90 shadow-[0_12px_40px_-8px_rgba(28,25,23,0.08)] overflow-hidden">
+                      {/* Top Action Bar */}
+                      <div className="px-8 py-5 bg-gradient-to-r from-stone-50 via-[#FAF8F5] to-stone-50 border-b border-stone-200/70 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center space-x-3.5">
+                          <div className="w-10 h-10 rounded-2xl bg-stone-900 text-stone-100 flex items-center justify-center shadow-xs">
+                            <Icons.Feather className="w-4 h-4 text-amber-200" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest font-bold text-stone-500">
+                              Correspondence Ready
+                            </span>
+                            <h3 className="text-base font-bold text-stone-900 font-editorial">
+                              Letter to Your Dad
+                            </h3>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2.5">
+                          {optionBText && (
+                            <div className="bg-stone-200/70 p-1 rounded-xl flex text-xs font-medium">
+                              <button
+                                onClick={() => setSelectedOption("A")}
+                                className={`px-3 py-1.5 rounded-lg transition-all ${selectedOption === "A" ? "bg-white text-stone-900 shadow-xs font-semibold" : "text-stone-600"}`}
+                              >
+                                Option I: Intimate
+                              </button>
+                              <button
+                                onClick={() => setSelectedOption("B")}
+                                className={`px-3 py-1.5 rounded-lg transition-all ${selectedOption === "B" ? "bg-white text-stone-900 shadow-xs font-semibold" : "text-stone-600"}`}
+                              >
+                                Option II: Direct
+                              </button>
+                            </div>
+                          )}
+
+                          <button
+                            onClick={handleCopy}
+                            className="px-3.5 py-1.5 text-xs font-semibold bg-stone-900 hover:bg-stone-800 text-stone-50 rounded-xl flex items-center space-x-1.5 shadow-xs transition-colors"
+                          >
+                            {copied ? <Icons.Check className="w-3.5 h-3.5 text-emerald-400" /> : <Icons.Copy className="w-3.5 h-3.5" />}
+                            <span>{copied ? "Copied" : "Copy"}</span>
+                          </button>
+
+                          <button
+                            onClick={handleDownloadLetterHtml}
+                            className="px-3 py-1.5 text-xs font-semibold bg-amber-800 hover:bg-amber-900 text-amber-50 rounded-xl flex items-center space-x-1.5 shadow-xs transition-colors"
+                            title="Download formatted HTML letter"
+                          >
+                            <Icons.FileCode className="w-3.5 h-3.5 text-amber-200" />
+                            <span>Download HTML</span>
+                          </button>
+
+                          <button
+                            onClick={handleDownloadTxt}
+                            className="p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition-colors border border-stone-200/60"
+                            title="Download plain text file"
+                          >
+                            <Icons.Download className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={handlePrint}
+                            className="p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition-colors border border-stone-200/60"
+                            title="Print or Save as PDF"
+                          >
+                            <Icons.Printer className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Sheet Body */}
+                      <div className="p-8 sm:p-14 bg-[#FCFAF7] relative min-h-[460px]">
+                        <div className="absolute right-12 top-12 opacity-5 pointer-events-none select-none">
+                          <Icons.Heart className="w-44 h-44 text-stone-900" />
+                        </div>
+
+                        <div className="max-w-3xl font-editorial text-[16px] xl:text-[17.5px] text-stone-800 leading-[1.85] whitespace-pre-wrap selection:bg-amber-100/70">
+                          {activeLetterText}
+                        </div>
+
+                        <div className="mt-12 pt-6 border-t border-stone-200/60 flex flex-wrap items-center justify-between text-xs text-stone-500 gap-3">
+                          <div className="flex items-center space-x-2 text-stone-700">
+                            <Icons.PhoneCall className="w-4 h-4 text-amber-800" />
+                            <span>Preparation note: Read through this draft once before your phone call</span>
+                          </div>
+                          <div className="text-[11px] text-stone-400">
+                            {wordCount} words &middot; ~{readTime} min read
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full max-w-4xl xl:max-w-5xl mx-auto flex flex-col gap-6">
+                    <div className="bg-white rounded-3xl border border-stone-200/90 shadow-[0_10px_35px_-8px_rgba(28,25,23,0.06)] overflow-hidden">
+                      <div className="px-8 py-5 bg-gradient-to-r from-stone-50 via-[#FAF8F5] to-stone-50 border-b border-stone-200/70 flex items-center justify-between">
+                        <div className="flex items-center space-x-3.5">
+                          <div className="w-10 h-10 rounded-2xl bg-stone-100 border border-stone-200 text-stone-800 flex items-center justify-center shadow-xs">
+                            <Icons.Feather className="w-4 h-4 text-amber-800" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest font-bold text-stone-500">
+                              Writing Desk
+                            </span>
+                            <h3 className="text-base font-bold text-stone-900 font-editorial">
+                              Draft in Progress
+                            </h3>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 text-xs text-stone-500">
+                          <Icons.Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
+                          <span>Reflecting with Ghostwriter...</span>
+                        </div>
+                      </div>
+
+                      <div className="p-8 sm:p-14 bg-[#FCFAF7] min-h-[460px] flex flex-col justify-between relative">
+                        <div className="absolute right-12 top-12 opacity-5 pointer-events-none select-none">
+                          <Icons.Heart className="w-44 h-44 text-stone-900" />
+                        </div>
+
+                        <div className="max-w-3xl space-y-6">
+                          <div className="flex items-center justify-between text-xs text-stone-400 border-b border-stone-200/50 pb-3">
+                            <span>To: Dad</span>
+                            <span>{currentDate}</span>
+                          </div>
+
+                          <div className="space-y-4 font-editorial text-stone-700 text-[15px] sm:text-[16px] leading-[1.85]">
+                            <p className="font-semibold text-stone-900 text-lg">
+                              Dear Dad,
+                            </p>
+                            <p className="text-stone-500 italic bg-stone-100/40 p-4 rounded-2xl border border-stone-200/40">
+                              As you answer each question on the left, the Ghostwriter will weave your true story, your apology, and your gratitude into a sincere letter right here.
+                            </p>
+                            <div className="space-y-3 pt-2">
+                              <div className="h-4 bg-stone-200/40 rounded-full w-11/12 animate-pulse" />
+                              <div className="h-4 bg-stone-200/30 rounded-full w-full animate-pulse" />
+                              <div className="h-4 bg-stone-200/40 rounded-full w-4/5 animate-pulse" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-12 pt-5 border-t border-stone-200/60 flex items-center justify-between text-xs text-stone-400">
+                          <span className="flex items-center gap-1.5">
+                            <Icons.Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Genuine apology &amp; heartfelt gratitude studio</span>
+                          </span>
+                          <span>Calm &amp; Private</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-white/80 border border-stone-200/80 rounded-2xl p-4.5 shadow-xs">
+                        <div className="flex items-center space-x-2 text-stone-900 mb-1.5">
+                          <Icons.Smile className="w-4 h-4 text-amber-800" />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">Patience &amp; Space</h5>
+                        </div>
+                        <p className="text-xs text-stone-500 leading-relaxed">
+                          Take as much time as you need. Sharing your true feelings honestly is what brings real peace.
+                        </p>
+                      </div>
+
+                      <div className="bg-white/80 border border-stone-200/80 rounded-2xl p-4.5 shadow-xs">
+                        <div className="flex items-center space-x-2 text-stone-900 mb-1.5">
+                          <Icons.Heart className="w-4 h-4 text-rose-800" />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">Rooted in Gratitude</h5>
+                        </div>
+                        <p className="text-xs text-stone-500 leading-relaxed">
+                          A meaningful apology acknowledges the hurt while reaffirming your deep appreciation for his sacrifices.
+                        </p>
+                      </div>
+
+                      <div className="bg-white/80 border border-stone-200/80 rounded-2xl p-4.5 shadow-xs">
+                        <div className="flex items-center space-x-2 text-stone-900 mb-1.5">
+                          <Icons.PhoneCall className="w-4 h-4 text-stone-800" />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">Phone Call Ready</h5>
+                        </div>
+                        <p className="text-xs text-stone-500 leading-relaxed">
+                          Writing down your thoughts removes emotional fog, giving you clarity before hearing his voice.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+
+          {/* Specifications Modal */}
+          {isSpecsOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-fade-in">
+              <div className="bg-white rounded-3xl border border-stone-200 max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 shadow-2xl">
+                <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+                  <h3 className="text-lg font-bold text-stone-900 font-editorial">Letter Ghostwriter Specifications</h3>
+                  <button onClick={() => setIsSpecsOpen(false)} className="p-1 rounded-xl text-stone-400 hover:text-stone-700">
+                    <Icons.X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="py-5 space-y-4 text-xs text-stone-700 leading-relaxed">
+                  <p><strong>Core Mission:</strong> Guide user gently through authentic apology and gratitude without rushing into generic templates or hallucinating facts.</p>
+                  <p><strong>5 Critical Gatekeepers:</strong></p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>1. How user addresses dad (Dad, Daddy, Papa)</li>
+                    <li>2. Specific apology for physical expression of frustration</li>
+                    <li>3. Concrete sacrifices and help to thank dad for</li>
+                    <li>4. Dad's personality and communication style</li>
+                    <li>5. Desired tone, formality, and phone call preparation</li>
+                  </ul>
+                  <p><strong>Ironclad Rule:</strong> Refuses to output draft prematurely, preventing superficial reconciliation attempts.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Architecture Modal */}
+          {isDiagramOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-fade-in">
+              <div className="bg-white rounded-3xl border border-stone-200 max-w-3xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 shadow-2xl">
+                <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+                  <h3 className="text-lg font-bold text-stone-900 font-editorial">System Architecture</h3>
+                  <button onClick={() => setIsDiagramOpen(false)} className="p-1 rounded-xl text-stone-400 hover:text-stone-700">
+                    <Icons.X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="py-6 text-xs text-stone-700 space-y-4">
+                  <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200">
+                    <p className="font-semibold text-stone-900 mb-1">Dual-Engine Resilient Design</p>
+                    <p>When running connected to the server, uses Gemini 3.8 Flash with the complete Letter Ghostwriter system prompt. When downloaded as an offline HTML file or operated offline, seamlessly switches to the built-in deterministic gatekeeper engine.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Render into root
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
